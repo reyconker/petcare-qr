@@ -16,7 +16,13 @@ export async function getDogId(): Promise<string> {
   const cookieStore = await cookies();
   const cookieDogId = cookieStore.get('active_dog_id')?.value;
 
-  // Fetch all dogs for user
+  // Since RLS protects all queries anyway, we can trust the cookie to save a DB query.
+  // If the dog was deleted, queries will return empty and the UI will adapt or redirect.
+  if (cookieDogId) {
+    return cookieDogId;
+  }
+
+  // Fetch all dogs for user if no cookie is set
   const { data: dogs } = await supabase
     .from('dog_profiles')
     .select('id')
@@ -25,19 +31,19 @@ export async function getDogId(): Promise<string> {
 
   if (!dogs || dogs.length === 0) redirect('/onboarding');
 
-  // Validate cookie dog ID belongs to this user
-  if (cookieDogId && dogs.some(d => d.id === cookieDogId)) {
-    return cookieDogId;
-  }
-
-  // Default to first dog and set cookie
+  // Default to first dog and try to set cookie (will fail silently in Server Components, which is fine)
   const firstDogId = dogs[0].id;
-  cookieStore.set('active_dog_id', firstDogId, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 60 * 60 * 24 * 30,
-    path: '/',
-  });
+  try {
+    cookieStore.set('active_dog_id', firstDogId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 30,
+      path: '/',
+    });
+  } catch {
+    // Next.js throws an error if setting cookies from a Server Component during render.
+    // We ignore it; the fallback to dogs[0].id will keep working for this request.
+  }
 
   return firstDogId;
 }

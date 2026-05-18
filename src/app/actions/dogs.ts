@@ -61,7 +61,12 @@ export async function createDogProfile(formData: FormData) {
     .select('id')
     .single();
 
-  if (error || !dog) throw new Error(error?.message ?? 'Failed to create dog profile');
+  console.log('[DEBUG onboarding] Insert result:', { dogId: dog?.id, error: error?.message });
+
+  if (error || !dog) {
+    console.error('[DEBUG onboarding] Insert failed. Not redirecting.', error);
+    return; // Do not redirect if it fails
+  }
 
   // Create default food_control for the new dog
   await supabase.from('food_control').insert({
@@ -84,8 +89,10 @@ export async function createDogProfile(formData: FormData) {
     maxAge: 60 * 60 * 24 * 30,
     path: '/',
   });
+  console.log('[DEBUG onboarding] Cookie active_dog_id set to:', dog.id);
 
   revalidatePath('/', 'layout');
+  console.log('[DEBUG onboarding] Redirecting to /dashboard');
   redirect('/dashboard');
 }
 

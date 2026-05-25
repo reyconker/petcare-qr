@@ -23,10 +23,10 @@ export async function getDbData(): Promise<AppData> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  console.error('[DEBUG ONBOARDING HARD][db.ts] user.id:', user.id);
+
 
   const dogId = await getDogId();
-  console.error('[DEBUG ONBOARDING HARD][db.ts] dogId from getDogId:', dogId);
+
 
   const SELECT_FIELDS = 'id, name, species, breed, gender, weight, photo_url, age_text, birth_date, color, microchip, allergies, diseases, emergency_notes, owner_name, owner_phone, owner_email, qr_enabled, qr_show_allergies, qr_show_conditions, qr_show_treatments, qr_show_vaccines, qr_show_owner_contact, qr_show_emergency_notes, public_qr_token';
 
@@ -38,13 +38,13 @@ export async function getDbData(): Promise<AppData> {
     .eq('user_id', user.id)
     .maybeSingle();
 
-  console.error('[DEBUG ONBOARDING HARD][db.ts] Primary dogRow result:', { id: dogRowPrimary?.id, error: dogErrorPrimary?.message });
+
 
   let dogRow = dogRowPrimary;
 
   // Fallback: if primary lookup failed, search any dog belonging to this user
   if (!dogRow) {
-    console.error('[DEBUG ONBOARDING HARD][db.ts] Primary lookup failed. Running fallback query by user_id:', user.id);
+  
     const { data: fallbackRow, error: fallbackError } = await supabase
       .from('dog_profiles')
       .select(SELECT_FIELDS)
@@ -53,13 +53,13 @@ export async function getDbData(): Promise<AppData> {
       .limit(1)
       .maybeSingle();
 
-    console.error('[DEBUG ONBOARDING HARD][db.ts] Fallback result:', { id: fallbackRow?.id, error: fallbackError?.message });
+  
     dogRow = fallbackRow;
   }
 
   // Only redirect to /onboarding if both primary and fallback returned nothing
   if (!dogRow) {
-    console.error('[DEBUG ONBOARDING HARD][db.ts] No dog found for user. Redirecting to /onboarding.');
+  
     redirect('/onboarding');
   }
 

@@ -15,36 +15,39 @@ export async function getDogId(): Promise<string> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    console.log('[DEBUG getDogId] No user, redirecting to /login');
+    console.error('[DEBUG ONBOARDING HARD] getDogId: No user, redirecting to /login');
     redirect('/login');
   }
 
   const cookieStore = await cookies();
   const cookieDogId = cookieStore.get('active_dog_id')?.value;
-  console.log('[DEBUG getDogId] User:', user.id, 'Cookie active_dog_id:', cookieDogId);
+  console.error('[DEBUG ONBOARDING HARD] getDogId: User', user.id, '| Cookie active_dog_id:', cookieDogId);
 
-  // Since RLS protects all queries anyway, we can trust the cookie to save a DB query.
-  if (cookieDogId) {
-    console.log('[DEBUG getDogId] Found cookie, returning early:', cookieDogId);
-    return cookieDogId;
-  }
-
-  // Fetch all dogs for user if no cookie is set
+  // Fetch ALL dogs for the user first to validate against database truth
   const { data: dogs } = await supabase
     .from('dog_profiles')
     .select('id')
     .eq('user_id', user.id)
     .order('created_at', { ascending: true });
 
-  console.log('[DEBUG getDogId] DB query returned dogs count:', dogs?.length);
+  console.error('[DEBUG ONBOARDING HARD] getDogId: DB query returned dogs count:', dogs?.length, '| DB data:', JSON.stringify(dogs));
 
+  // If DB says the user has NO dogs, we MUST redirect to onboarding, regardless of any stale cookie.
   if (!dogs || dogs.length === 0) {
-    console.log('[DEBUG getDogId] No dogs found in DB. Redirecting to /onboarding');
+    console.error('[DEBUG ONBOARDING HARD] getDogId: User has 0 dogs in DB. Redirecting to /onboarding');
     redirect('/onboarding');
   }
 
-  // Default to first dog and try to set cookie (will fail silently in Server Components, which is fine)
+  // If cookie exists, validate that the ID actually belongs to this user (exists in the dogs array)
+  if (cookieDogId && dogs.some(d => d.id === cookieDogId)) {
+    console.error('[DEBUG ONBOARDING HARD] getDogId: Found valid cookie for user, returning early:', cookieDogId);
+    return cookieDogId;
+  }
+
+  // If no cookie or invalid cookie, default to the first dog found in the database.
   const firstDogId = dogs[0].id;
+  console.error('[DEBUG ONBOARDING HARD] getDogId: Cookie missing or invalid. Defaulting to first dog:', firstDogId);
+
   try {
     cookieStore.set('active_dog_id', firstDogId, {
       httpOnly: true,
@@ -52,9 +55,9 @@ export async function getDogId(): Promise<string> {
       maxAge: 60 * 60 * 24 * 30,
       path: '/',
     });
-    console.log('[DEBUG getDogId] Cookie active_dog_id set manually to first dog:', firstDogId);
-  } catch {
-    console.log('[DEBUG getDogId] Caught error setting cookie in Server Component context (ignored)');
+    console.error('[DEBUG ONBOARDING HARD] getDogId: Cookie active_dog_id set manually to:', firstDogId);
+  } catch (err) {
+    console.error('[DEBUG ONBOARDING HARD] getDogId: Caught error setting cookie in Server Component context (ignored)', err);
   }
 
   return firstDogId;

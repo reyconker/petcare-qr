@@ -14,7 +14,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getDogId } from '@/lib/supabase/getDogId';
 import { redirect } from 'next/navigation';
 import { unstable_noStore as noStore } from 'next/cache';
-import { AppData, Dog, Treatment, DoseHistory, Recipe, FoodControl, Vaccine, QrSettings } from '@/types';
+import { AppData, Dog, Treatment, DoseHistory, Recipe, FoodControl, Vaccine, QrSettings, Surgery } from '@/types';
 
 export async function getDbData(): Promise<AppData> {
   noStore();
@@ -28,7 +28,7 @@ export async function getDbData(): Promise<AppData> {
   const dogId = await getDogId();
 
 
-  const SELECT_FIELDS = 'id, name, species, breed, gender, weight, photo_url, age_text, birth_date, color, microchip, allergies, diseases, emergency_notes, owner_name, owner_phone, owner_email, qr_enabled, qr_show_allergies, qr_show_conditions, qr_show_treatments, qr_show_vaccines, qr_show_owner_contact, qr_show_emergency_notes, public_qr_token';
+  const SELECT_FIELDS = 'id, name, species, breed, gender, weight, photo_url, age_text, birth_date, color, microchip, allergies, diseases, emergency_notes, is_neutered, neuter_date, surgeries, owner_name, owner_phone, owner_email, qr_enabled, qr_show_allergies, qr_show_conditions, qr_show_treatments, qr_show_vaccines, qr_show_owner_contact, qr_show_emergency_notes, qr_show_food, public_qr_token';
 
   // Primary lookup: by dogId AND user_id (RLS-safe, no stale ID risk)
   const { data: dogRowPrimary, error: dogErrorPrimary } = await supabase
@@ -78,17 +78,26 @@ export async function getDbData(): Promise<AppData> {
     supabase.from('food_control').select('*').eq('dog_id', dogId).single(),
   ]);
 
-  // Generate signed URLs for private recipes
+  // Generate signed URLs for private recipes (stored in prescriptions bucket)
   const processedRecipesRaw = await Promise.all((recipesRaw ?? []).map(async (r) => {
     let finalImageUrl = r.image_url;
+    // If it's a relative path (not a full URL), generate a signed URL from prescriptions bucket
     if (finalImageUrl && !finalImageUrl.startsWith('http')) {
-      const { data } = await supabase.storage.from('petcare-private').createSignedUrl(finalImageUrl, 3600);
+      const { data } = await supabase.storage.from('prescriptions').createSignedUrl(finalImageUrl, 3600);
       if (data) finalImageUrl = data.signedUrl;
     }
     return { ...r, image_url: finalImageUrl };
   }));
 
   // Map snake_case DB columns → camelCase TypeScript types
+  // Parse surgeries JSONB safely
+  let parsedSurgeries: Surgery[] = [];
+  try {
+    const raw = dogRow.surgeries;
+    if (Array.isArray(raw)) parsedSurgeries = raw as Surgery[];
+    else if (typeof raw === 'string') parsedSurgeries = JSON.parse(raw);
+  } catch { /* ignore parse errors, default to empty */ }
+
   const dog: Dog = {
     id: dogRow.id,
     name: dogRow.name,
@@ -104,6 +113,9 @@ export async function getDbData(): Promise<AppData> {
     allergies: dogRow.allergies || [],
     diseases: dogRow.diseases || [],
     emergencyNotes: dogRow.emergency_notes || '',
+    isNeutered: dogRow.is_neutered ?? false,
+    neuterDate: dogRow.neuter_date ?? undefined,
+    surgeries: parsedSurgeries,
     publicQrToken: dogRow.public_qr_token,
     owner: {
       name: dogRow.owner_name ?? '',
@@ -117,7 +129,7 @@ export async function getDbData(): Promise<AppData> {
     name: t.name,
     reason: t.reason ?? '',
     startDate: t.start_date ?? '',
-    endDate: t.end_date ?? '',
+    endDate: t.end_date ?? undefined,
     frequencyHours: t.frequency_hours ?? 12,
     doseAmount: t.dose_amount ?? 1,
     unit: t.unit ?? 'ml',
@@ -125,6 +137,7 @@ export async function getDbData(): Promise<AppData> {
     remainingQuantity: t.remaining_quantity ?? 0,
     state: t.state as Treatment['state'],
     notes: t.notes ?? '',
+    isPermanent: t.is_permanent ?? false,
     recipeId: t.recipe_id ?? undefined,
   }));
 
@@ -195,6 +208,7 @@ export async function getDbData(): Promise<AppData> {
     showVaccines: dogRow.qr_show_vaccines ?? true,
     showOwnerContact: dogRow.qr_show_owner_contact ?? true,
     showEmergencyNotes: dogRow.qr_show_emergency_notes ?? true,
+    showFood: dogRow.qr_show_food ?? false,
   };
 
   return { dog, treatments, doseHistory, prescriptions: [], recipes, food, vaccines, qrSettings };

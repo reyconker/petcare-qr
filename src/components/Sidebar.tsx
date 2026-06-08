@@ -12,7 +12,7 @@ import { clsx } from 'clsx';
 const navItems = [
   { name: 'Hoy', href: '/hoy', icon: CalendarClock },
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Perfil del Perro', href: '/perfil', icon: Dog },
+  { name: 'Perfil de Mascota', href: '/perfil', icon: Dog },
   { name: 'Ficha Médica', href: '/ficha', icon: FileText },
   { name: 'Tratamientos', href: '/tratamientos', icon: Pill },
   { name: 'Historial Dosis', href: '/historial-dosis', icon: History },
@@ -90,7 +90,7 @@ export function Sidebar({
               )}
             >
               <Icon className="w-5 h-5" />
-              <span className="font-medium">{item.name}</span>
+              <span className="font-medium">{item.name === 'Perfil de Mascota' ? `Perfil de ${activeDogName}` : item.name}</span>
             </Link>
           );
         })}

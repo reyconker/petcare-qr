@@ -1,3 +1,10 @@
+export type Surgery = {
+  name: string;
+  reason: string;
+  date: string;
+  notes: string;
+};
+
 export type Dog = {
   id: string;
   name: string;
@@ -12,7 +19,10 @@ export type Dog = {
   microchip?: string;
   allergies: string[];
   diseases: string[];
-  emergencyNotes: string; // Updated from notes
+  emergencyNotes: string;
+  isNeutered: boolean;
+  neuterDate?: string;
+  surgeries: Surgery[];
   publicQrToken?: string;
   owner: {
     name: string;
@@ -28,7 +38,7 @@ export type Treatment = {
   name: string;
   reason: string;
   startDate: string;
-  endDate: string;
+  endDate?: string;       // Optional: null/empty for permanent treatments
   frequencyHours: number; // every X hours
   doseAmount: number;
   unit: string;
@@ -36,7 +46,8 @@ export type Treatment = {
   remainingQuantity: number;
   state: TreatmentState;
   notes: string;
-  recipeId?: string; // Link to recipe
+  isPermanent?: boolean;  // true = no end date required
+  recipeId?: string;      // Link to recipe
 };
 
 export type DoseHistory = {
@@ -108,6 +119,7 @@ export type QrSettings = {
   showVaccines: boolean;
   showOwnerContact: boolean;
   showEmergencyNotes: boolean;
+  showFood: boolean;
 };
 
 export type AppData = {

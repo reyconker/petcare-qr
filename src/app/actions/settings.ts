@@ -16,6 +16,7 @@ export async function updateQrSettings(formData: FormData) {
     qr_show_vaccines: formData.get('showVaccines') === 'on',
     qr_show_owner_contact: formData.get('showOwnerContact') === 'on',
     qr_show_emergency_notes: formData.get('showEmergencyNotes') === 'on',
+    qr_show_food: formData.get('showFood') === 'on',
   }).eq('id', dogId);
 
   revalidatePath('/qr-config');

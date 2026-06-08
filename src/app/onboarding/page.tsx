@@ -16,7 +16,7 @@ export default function OnboardingPage() {
         <form action={createDogProfile} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del perro *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de la mascota *</label>
               <input type="text" name="name" required placeholder="Ej: Max" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
             </div>
             <div>
@@ -43,7 +43,7 @@ export default function OnboardingPage() {
               <input type="text" name="color" placeholder="Ej: Dorado" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
             </div>
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tu nombre (dueño) *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tu nombre (tutor/a) *</label>
               <input type="text" name="ownerName" required placeholder="Ej: Juan García" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" />
             </div>
             <div className="col-span-2">

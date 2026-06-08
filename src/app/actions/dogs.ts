@@ -115,9 +115,22 @@ export async function editDogProfile(formData: FormData) {
     photo_url = await uploadImage(photoFile, photo_url || '');
   }
 
+  // Parse new fields
+  const species = (formData.get('species') as string)?.trim() || 'Perro';
+  const isNeutered = formData.get('isNeutered') === 'on';
+  const neuterDate = isNeutered ? ((formData.get('neuterDate') as string) || null) : null;
+
+  // Parse surgeries JSON from hidden input
+  let surgeries: unknown[] = [];
+  try {
+    const raw = formData.get('surgeries') as string;
+    if (raw) surgeries = JSON.parse(raw);
+  } catch { /* keep empty array */ }
+
   await supabase.from('dog_profiles').update({
     name: (formData.get('name') as string)?.trim() || undefined,
     photo_url: photo_url,
+    species,
     breed: (formData.get('breed') as string)?.trim() || '',
     gender: (formData.get('gender') as string) || undefined,
     birth_date: (formData.get('birthDate') as string) || undefined,
@@ -125,6 +138,9 @@ export async function editDogProfile(formData: FormData) {
     weight: isNaN(weight) ? 0 : weight,
     color: (formData.get('color') as string)?.trim() || '',
     microchip: (formData.get('microchip') as string)?.trim() || undefined,
+    is_neutered: isNeutered,
+    neuter_date: neuterDate,
+    surgeries,
     allergies,
     diseases,
     emergency_notes: (formData.get('emergencyNotes') as string)?.trim() || '',

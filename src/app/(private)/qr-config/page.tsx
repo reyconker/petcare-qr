@@ -81,13 +81,21 @@ export default async function QrConfigPage() {
             </div>
 
             <div className="flex items-center justify-between py-2">
-              <span className="text-sm text-gray-700">Mostrar contacto del dueño</span>
+              <span className="text-sm text-gray-700">Mostrar contacto del tutor/a</span>
               <input type="checkbox" name="showOwnerContact" defaultChecked={settings.showOwnerContact} className="w-4 h-4 accent-teal-600" />
             </div>
 
-            <div className="flex items-center justify-between py-2 border-b">
+            <div className="flex items-center justify-between py-2">
               <span className="text-sm text-gray-700">Mostrar notas de emergencia</span>
               <input type="checkbox" name="showEmergencyNotes" defaultChecked={settings.showEmergencyNotes} className="w-4 h-4 accent-teal-600" />
+            </div>
+
+            <div className="flex items-center justify-between py-2 border-b">
+              <div>
+                <span className="text-sm text-gray-700">Mostrar alimento</span>
+                <p className="text-xs text-gray-400">Muestra marca de alimento, ración diaria y horarios en el QR.</p>
+              </div>
+              <input type="checkbox" name="showFood" defaultChecked={settings.showFood} className="w-4 h-4 accent-teal-600" />
             </div>
 
             <button type="submit" className="w-full bg-gray-100 hover:bg-teal-600 hover:text-white text-gray-700 font-medium py-2 rounded-lg transition-colors text-sm mt-4">

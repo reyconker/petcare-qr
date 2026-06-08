@@ -12,6 +12,8 @@ export async function addTreatment(formData: FormData) {
   const doseAmount = Math.max(0.01, Number(formData.get('doseAmount')));
   const initialQuantity = Math.max(0, Number(formData.get('initialQuantity')));
   const name = formData.get('name') as string;
+  const isPermanent = formData.get('isPermanent') === 'true';
+  const rawEndDate = formData.get('endDate') as string | null;
 
   if (!name || name.trim() === '') {
     throw new Error('El nombre del tratamiento es obligatorio.');
@@ -22,7 +24,8 @@ export async function addTreatment(formData: FormData) {
     name: name.trim(),
     reason: formData.get('reason') as string,
     start_date: formData.get('startDate') as string,
-    end_date: formData.get('endDate') as string,
+    // For permanent treatments end_date is null; for temporal it is required
+    end_date: isPermanent ? null : (rawEndDate || null),
     frequency_hours: frequencyHours,
     dose_amount: doseAmount,
     unit: formData.get('unit') as string,
@@ -30,6 +33,7 @@ export async function addTreatment(formData: FormData) {
     remaining_quantity: initialQuantity,
     state: 'activo',
     notes: formData.get('notes') as string ?? '',
+    is_permanent: isPermanent,
   });
 
   revalidatePath('/tratamientos');
@@ -44,6 +48,8 @@ export async function editTreatment(id: string, formData: FormData) {
   const doseAmount = Math.max(0.01, Number(formData.get('doseAmount')));
   const initialQuantity = Math.max(0, Number(formData.get('initialQuantity')));
   const remainingInput = Number(formData.get('remainingQuantity'));
+  const isPermanent = formData.get('isPermanent') === 'true';
+  const rawEndDate = formData.get('endDate') as string | null;
   
   // Validate remaining quantity
   const remainingQuantity = Math.max(0, Math.min(initialQuantity, isNaN(remainingInput) ? initialQuantity : remainingInput));
@@ -62,7 +68,7 @@ export async function editTreatment(id: string, formData: FormData) {
     name: name.trim(),
     reason: formData.get('reason') as string,
     start_date: formData.get('startDate') as string,
-    end_date: formData.get('endDate') as string,
+    end_date: isPermanent ? null : (rawEndDate || null),
     frequency_hours: frequencyHours,
     dose_amount: doseAmount,
     unit: formData.get('unit') as string,
@@ -70,6 +76,7 @@ export async function editTreatment(id: string, formData: FormData) {
     remaining_quantity: remainingQuantity,
     notes: formData.get('notes') as string,
     state: state,
+    is_permanent: isPermanent,
   }).eq('id', id).eq('dog_id', dogId);
 
   revalidatePath('/tratamientos');
@@ -101,7 +108,7 @@ export async function markDoseAsGiven(
     .eq('dog_id', dogId)
     .single();
 
-  if (!treatment) throw new Error('Tratamiento no encontrado o no pertenece al perro activo.');
+  if (!treatment) throw new Error('Tratamiento no encontrado o no pertenece a la mascota activa.');
   if (treatment.state !== 'activo') throw new Error('El tratamiento no está activo.');
   if (treatment.remaining_quantity < doseAmount) throw new Error('No hay suficiente medicamento para esta dosis.');
 

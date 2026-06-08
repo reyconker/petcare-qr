@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { AlertTriangle, Phone, Mail, Syringe, Pill, ShieldOff } from 'lucide-react';
+import { AlertTriangle, Phone, Mail, Syringe, Pill, ShieldOff, UtensilsCrossed } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
 export default async function PublicQrPage({ params }: { params: Promise<{ id: string }> }) {
@@ -11,7 +11,7 @@ export default async function PublicQrPage({ params }: { params: Promise<{ id: s
   // Fetch dog profile by token WITHOUT filtering qr_enabled first
   const { data: dogRow, error } = await supabase
     .from('dog_profiles')
-    .select('id, name, breed, weight, photo_url, allergies, diseases, emergency_notes, owner_name, owner_phone, owner_email, qr_enabled, qr_show_allergies, qr_show_conditions, qr_show_treatments, qr_show_vaccines, qr_show_owner_contact, qr_show_emergency_notes')
+    .select('id, name, breed, weight, photo_url, allergies, diseases, emergency_notes, owner_name, owner_phone, owner_email, qr_enabled, qr_show_allergies, qr_show_conditions, qr_show_treatments, qr_show_vaccines, qr_show_owner_contact, qr_show_emergency_notes, qr_show_food')
     .eq('public_qr_token', id)
     .maybeSingle();
 
@@ -27,7 +27,7 @@ export default async function PublicQrPage({ params }: { params: Promise<{ id: s
           </div>
           <h1 className="text-2xl font-bold text-gray-800 mb-3">Ficha no disponible</h1>
           <p className="text-gray-500 mb-6">
-            El dueño ha desactivado el acceso público por QR a la ficha de esta mascota.
+            El tutor/a ha desactivado el acceso público por QR a la ficha de esta mascota.
           </p>
           <p className="text-xs text-gray-300">PetCare QR</p>
         </div>
@@ -38,9 +38,10 @@ export default async function PublicQrPage({ params }: { params: Promise<{ id: s
   const dogId = dogRow.id;
 
   // Fetch public data in parallel (only needed if qr_enabled)
-  const [{ data: treatmentsRaw }, { data: vaccinesRaw }] = await Promise.all([
+  const [{ data: treatmentsRaw }, { data: vaccinesRaw }, { data: foodRaw }] = await Promise.all([
     supabase.from('treatments').select('id, name, dose_amount, unit, frequency_hours').eq('dog_id', dogId).eq('state', 'activo'),
     supabase.from('vaccines').select('id, name, state').eq('dog_id', dogId),
+    supabase.from('food_control').select('brand, food_type, daily_ration_grams, times_per_day').eq('dog_id', dogId).maybeSingle(),
   ]);
 
   const activeTreatments = treatmentsRaw ?? [];
@@ -55,6 +56,7 @@ export default async function PublicQrPage({ params }: { params: Promise<{ id: s
     showVaccines: dogRow.qr_show_vaccines ?? true,
     showOwnerContact: dogRow.qr_show_owner_contact ?? true,
     showEmergencyNotes: dogRow.qr_show_emergency_notes ?? true,
+    showFood: dogRow.qr_show_food ?? false,
   };
 
   const allergies: string[] = dogRow.allergies ?? [];
@@ -102,6 +104,27 @@ export default async function PublicQrPage({ params }: { params: Promise<{ id: s
             </div>
           )}
 
+          {/* Alimento */}
+          {qr.showFood && foodRaw && foodRaw.brand && foodRaw.brand !== 'Sin registrar' && (
+            <div>
+              <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                <UtensilsCrossed className="text-amber-600 w-5 h-5" /> Alimentación
+              </h2>
+              <div className="bg-amber-50 border border-amber-100 p-4 rounded-lg text-sm space-y-1">
+                <p><strong className="text-amber-900">Alimento:</strong> <span className="text-amber-800">{foodRaw.brand}</span></p>
+                {foodRaw.food_type && (
+                  <p><strong className="text-amber-900">Tipo:</strong> <span className="text-amber-800">{foodRaw.food_type}</span></p>
+                )}
+                {foodRaw.daily_ration_grams > 0 && (
+                  <p><strong className="text-amber-900">Ración diaria:</strong> <span className="text-amber-800">{foodRaw.daily_ration_grams}g</span></p>
+                )}
+                {foodRaw.times_per_day > 0 && (
+                  <p><strong className="text-amber-900">Comidas por día:</strong> <span className="text-amber-800">{foodRaw.times_per_day}</span></p>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Tratamientos Activos */}
           {qr.showActiveTreatments && activeTreatments.length > 0 && (
             <div>
@@ -140,7 +163,7 @@ export default async function PublicQrPage({ params }: { params: Promise<{ id: s
             </div>
           )}
 
-          {/* Contacto Dueño */}
+          {/* Contacto Tutor/a */}
           {qr.showOwnerContact && (dogRow.owner_name || dogRow.owner_phone || dogRow.owner_email) && (
             <div className="border-t pt-6 mt-6">
               <h2 className="text-lg font-bold text-gray-800 mb-3">Contacto de Emergencia</h2>

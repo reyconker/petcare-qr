@@ -1,16 +1,17 @@
 import { getDbData } from '@/lib/db';
 import { EditProfileButton } from './ProfileForms';
+import { AlertTriangle, Scissors, Stethoscope } from 'lucide-react';
 
 export default async function PerfilPage() {
   const { dog } = await getDbData();
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto space-y-6">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         
         {/* Header Profile */}
         <div className="bg-teal-600 h-32 relative"></div>
-        <div className="px-8 pb-8">
+        <div className="px-6 sm:px-8 pb-8">
           <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6 -mt-16 mb-8">
             <div className="w-32 h-32 rounded-full border-4 border-white bg-gray-200 overflow-hidden relative shadow-md">
               {dog.photoUrl ? (
@@ -21,12 +22,23 @@ export default async function PerfilPage() {
             </div>
             <div className="flex-1 text-center sm:text-left">
               <h1 className="text-3xl font-bold text-gray-800">{dog.name}</h1>
-              <p className="text-gray-500">{dog.breed} • {dog.gender} • {dog.ageText}</p>
+              <p className="text-gray-500">{dog.species} • {dog.breed} • {dog.gender} • {dog.ageText}</p>
             </div>
             <div className="sm:self-start sm:mt-20">
               <EditProfileButton dog={dog} />
             </div>
           </div>
+
+          {/* ── Emergency Notes — prominent card ── */}
+          {dog.emergencyNotes && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex gap-3">
+              <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h2 className="text-sm font-bold text-red-800 uppercase tracking-wide mb-1">⚠ Notas de Emergencia</h2>
+                <p className="text-sm text-red-700 whitespace-pre-wrap">{dog.emergencyNotes}</p>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             
@@ -58,12 +70,27 @@ export default async function PerfilPage() {
                   <span className="text-gray-500 font-medium">Nacimiento</span>
                   <span className="col-span-2 text-gray-800">{dog.birthDate || '—'}</span>
                 </div>
+                <div className="grid grid-cols-3 text-sm">
+                  <span className="text-gray-500 font-medium">Esterilizado/a</span>
+                  <span className="col-span-2 text-gray-800">
+                    {dog.isNeutered ? (
+                      <>
+                        <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+                          <Scissors className="w-3 h-3" /> Sí
+                        </span>
+                        {dog.neuterDate && <span className="text-gray-500 text-xs ml-2">({dog.neuterDate})</span>}
+                      </>
+                    ) : (
+                      <span className="text-gray-500">No</span>
+                    )}
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Datos del Dueño */}
+            {/* Datos del Tutor/a */}
             <div>
-              <h2 className="text-xl font-semibold text-gray-800 border-b pb-2 mb-4">Datos del Dueño</h2>
+              <h2 className="text-xl font-semibold text-gray-800 border-b pb-2 mb-4">Datos del Tutor/a</h2>
               <div className="space-y-3">
                 <div className="grid grid-cols-3 text-sm">
                   <span className="text-gray-500 font-medium">Nombre</span>
@@ -104,13 +131,31 @@ export default async function PerfilPage() {
                     <p className="text-sm text-gray-500">Ninguna registrada</p>
                   )}
                 </div>
-                <div className="md:col-span-2">
-                  <h3 className="text-sm font-semibold text-gray-600 uppercase mb-2">Notas de Emergencia</h3>
-                  <p className="text-sm text-gray-800 bg-gray-50 p-4 rounded-lg border border-gray-100">
-                    {dog.emergencyNotes || 'Sin observaciones importantes.'}
-                  </p>
-                </div>
               </div>
+            </div>
+
+            {/* Cirugías Previas */}
+            <div className="md:col-span-2">
+              <h2 className="text-xl font-semibold text-gray-800 border-b pb-2 mb-4 flex items-center gap-2">
+                <Stethoscope className="w-5 h-5 text-teal-600" />
+                Cirugías Previas
+              </h2>
+              {dog.surgeries.length > 0 ? (
+                <div className="space-y-3">
+                  {dog.surgeries.map((s, idx) => (
+                    <div key={idx} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <div className="flex flex-wrap justify-between items-start gap-2">
+                        <p className="font-semibold text-gray-800 text-sm">{s.name}</p>
+                        {s.date && <span className="text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full">{s.date}</span>}
+                      </div>
+                      {s.reason && <p className="text-sm text-gray-600 mt-1"><span className="font-medium">Motivo:</span> {s.reason}</p>}
+                      {s.notes && <p className="text-sm text-gray-500 mt-1">{s.notes}</p>}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">Sin cirugías registradas.</p>
+              )}
             </div>
 
           </div>

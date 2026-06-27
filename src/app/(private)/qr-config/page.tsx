@@ -28,7 +28,7 @@ export default async function QrConfigPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-4">
-          <QrDisplay qrToken={qrToken} />
+          <QrDisplay qrToken={qrToken} dogName={data.dog.name} />
           
           <form action={regenerateQrToken} className="bg-white rounded-xl shadow-sm border border-red-100 p-4">
             <h3 className="font-bold text-red-800 text-sm mb-1 flex items-center gap-2">

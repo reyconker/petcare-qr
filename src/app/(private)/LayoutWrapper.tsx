@@ -49,7 +49,7 @@ export function LayoutWrapper({
       )}
 
       <div className="flex-1 flex flex-col min-w-0">
-        <TopNav onMenuClick={() => setIsSidebarOpen(true)} />
+        <TopNav onMenuClick={() => setIsSidebarOpen(true)} dogName={activeDogName} />
         <main className="flex-1 p-4 md:p-6 overflow-auto">
           {children}
         </main>

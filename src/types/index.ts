@@ -88,14 +88,22 @@ export type Recipe = {
 
 export type FoodControl = {
   id: string;
+  foodName: string;         // nombre del alimento
   brand: string;
   foodType: string;
   totalQuantityKg: number;
   remainingQuantityKg: number;
+  unit: string;             // 'kg' | 'g'
   dailyRationGrams: number;
   timesPerDay: number;
   purchaseDate: string;
+  openDate: string;         // fecha de apertura del saco
+  purchasePlace: string;    // lugar de compra
+  price: number | null;     // valor/precio
   alertThresholdDays: number;
+  mealTimes: string[];      // HH:MM array
+  reminderMinutes: number;  // minutos antes del recordatorio
+  reminderActive: boolean;
 };
 
 export type VaccineState = 'al día' | 'próxima' | 'vencida';
@@ -120,6 +128,65 @@ export type QrSettings = {
   showOwnerContact: boolean;
   showEmergencyNotes: boolean;
   showFood: boolean;
+};
+
+// ── Phase 2: Veterinary Visits ───────────────────────────────────────────────
+export type VisitType =
+  | 'medicina general'
+  | 'especialidad'
+  | 'urgencia'
+  | 'control sano'
+  | 'vacunación'
+  | 'cirugía'
+  | 'otro';
+
+export type VeterinaryVisit = {
+  id: string;
+  dogId: string;
+  date: string;
+  clinic: string;
+  clinicPhone: string;
+  visitType: VisitType;
+  specialtyName: string;
+  vetName: string;
+  tasks: string;
+  observations: string;
+  nextControl: string;
+  treatmentIds: string[];
+  createdAt: string;
+};
+
+// ── Phase 4: Exams ───────────────────────────────────────────────────────────
+export type ExamReason =
+  | 'cirugía'
+  | 'enfermedad'
+  | 'control sano'
+  | 'seguimiento'
+  | 'otro';
+
+export type Exam = {
+  id: string;
+  dogId: string;
+  name: string;
+  examDate: string;
+  reason: ExamReason | string;
+  clinic: string;
+  fileUrl: string;
+  observations: string;
+  createdAt: string;
+};
+
+// ── Phase 5: Veterinary Centers ──────────────────────────────────────────────
+export type VeterinaryCenter = {
+  id: string;
+  userId: string;
+  name: string;
+  address: string;
+  phone: string;
+  vetName: string;
+  specialty: string;
+  observations: string;
+  createdAt: string;
 };
 
 export type AppData = {

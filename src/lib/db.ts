@@ -176,28 +176,54 @@ export async function getDbData(): Promise<AppData> {
     state: v.state as Vaccine['state'],
   }));
 
+  // Parse meal_times JSONB safely
+  let parsedMealTimes: string[] = [];
+  if (foodRaw) {
+    try {
+      const raw = foodRaw.meal_times;
+      if (Array.isArray(raw)) parsedMealTimes = raw as string[];
+      else if (typeof raw === 'string') parsedMealTimes = JSON.parse(raw);
+    } catch { /* ignore */ }
+  }
+
   const food: FoodControl = foodRaw
     ? {
         id: foodRaw.id,
+        foodName: foodRaw.food_name ?? '',
         brand: foodRaw.brand ?? '',
         foodType: foodRaw.food_type ?? '',
         totalQuantityKg: foodRaw.total_quantity_kg ?? 0,
         remainingQuantityKg: foodRaw.remaining_quantity_kg ?? 0,
+        unit: foodRaw.unit ?? 'kg',
         dailyRationGrams: foodRaw.daily_ration_grams ?? 200,
         timesPerDay: foodRaw.times_per_day ?? 2,
         purchaseDate: foodRaw.purchase_date ?? '',
+        openDate: foodRaw.open_date ?? '',
+        purchasePlace: foodRaw.purchase_place ?? '',
+        price: foodRaw.price ?? null,
         alertThresholdDays: foodRaw.alert_threshold_days ?? 7,
+        mealTimes: parsedMealTimes,
+        reminderMinutes: foodRaw.reminder_minutes ?? 15,
+        reminderActive: foodRaw.reminder_active ?? false,
       }
     : {
         id: dogId,
+        foodName: '',
         brand: 'Sin registrar',
         foodType: 'Seco',
         totalQuantityKg: 0,
         remainingQuantityKg: 0,
+        unit: 'kg',
         dailyRationGrams: 200,
         timesPerDay: 2,
         purchaseDate: '',
+        openDate: '',
+        purchasePlace: '',
+        price: null,
         alertThresholdDays: 7,
+        mealTimes: [],
+        reminderMinutes: 15,
+        reminderActive: false,
       };
 
   const qrSettings: QrSettings = {

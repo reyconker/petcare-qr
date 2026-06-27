@@ -6,6 +6,7 @@ import {
   LayoutDashboard, Dog, FileText, Pill, Bone,
   Syringe, QrCode, CalendarClock, History,
   Image as ImageIcon, ChevronRight, PawPrint,
+  FlaskConical, MapPin,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -18,7 +19,9 @@ const navItems = [
   { name: 'Historial Dosis', href: '/historial-dosis', icon: History },
   { name: 'Alimento', href: '/alimento', icon: Bone },
   { name: 'Recetas', href: '/recetas', icon: ImageIcon },
+  { name: 'Exámenes', href: '/examenes', icon: FlaskConical },
   { name: 'Vacunas', href: '/vacunas', icon: Syringe },
+  { name: 'Centros Veterinarios', href: '/centros-veterinarios', icon: MapPin },
   { name: 'Código QR', href: '/qr-config', icon: QrCode },
 ];
 

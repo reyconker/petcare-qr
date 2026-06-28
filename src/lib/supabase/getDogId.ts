@@ -55,8 +55,9 @@ export async function getDogId(): Promise<string> {
       path: '/',
     });
 
-  } catch (err) {
-
+  } catch {
+    // cookieStore.set is not available in read-only contexts (e.g. middleware)
+    // Silently skip — the ID is still returned correctly
   }
 
   return firstDogId;

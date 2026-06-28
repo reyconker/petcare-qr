@@ -31,7 +31,7 @@ export async function getDbData(): Promise<AppData> {
   const SELECT_FIELDS = 'id, name, species, breed, gender, weight, photo_url, age_text, birth_date, color, microchip, allergies, diseases, emergency_notes, is_neutered, neuter_date, surgeries, owner_name, owner_phone, owner_email, qr_enabled, qr_show_allergies, qr_show_conditions, qr_show_treatments, qr_show_vaccines, qr_show_owner_contact, qr_show_emergency_notes, qr_show_food, public_qr_token';
 
   // Primary lookup: by dogId AND user_id (RLS-safe, no stale ID risk)
-  const { data: dogRowPrimary, error: dogErrorPrimary } = await supabase
+  const { data: dogRowPrimary } = await supabase
     .from('dog_profiles')
     .select(SELECT_FIELDS)
     .eq('id', dogId)
@@ -45,7 +45,7 @@ export async function getDbData(): Promise<AppData> {
   // Fallback: if primary lookup failed, search any dog belonging to this user
   if (!dogRow) {
   
-    const { data: fallbackRow, error: fallbackError } = await supabase
+    const { data: fallbackRow } = await supabase
       .from('dog_profiles')
       .select(SELECT_FIELDS)
       .eq('user_id', user.id)

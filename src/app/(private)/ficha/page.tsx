@@ -67,7 +67,7 @@ export default async function FichaMedicaPage() {
           <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
             <Activity className="text-indigo-600" /> Ficha Médica
           </h1>
-          <p className="text-gray-500 text-sm mt-1">Atenciones veterinarias y consultas</p>
+          <p className="text-gray-500 text-sm mt-1">Historial de consultas y atenciones veterinarias</p>
         </div>
         <AddVisitButton />
       </div>
@@ -78,14 +78,14 @@ export default async function FichaMedicaPage() {
           <div className="bg-indigo-100 p-2 rounded-full flex-shrink-0">
             <Calendar className="w-5 h-5 text-indigo-600" />
           </div>
-          <div>
-            <p className="text-sm font-semibold text-indigo-800">Próximo control agendado</p>
-            <p className="text-sm text-indigo-700">
-              {upcoming.nextControl}
-              {upcoming.clinic && ` — ${upcoming.clinic}`}
-              {upcoming.vetName && ` (${upcoming.vetName})`}
-            </p>
-          </div>
+            <div>
+              <p className="text-sm font-semibold text-indigo-800">Próximo control veterinario agendado</p>
+              <p className="text-sm text-indigo-700">
+                {upcoming.nextControl}
+                {upcoming.vetName && ` — Dr/a. ${upcoming.vetName}`}
+                {upcoming.clinic && ` · ${upcoming.clinic}`}
+              </p>
+            </div>
         </div>
       )}
 
@@ -95,9 +95,9 @@ export default async function FichaMedicaPage() {
           <div className="bg-indigo-50 p-5 rounded-full mb-4">
             <Stethoscope className="w-12 h-12 text-indigo-300" />
           </div>
-          <h3 className="text-xl font-bold text-gray-700 mb-2">Sin atenciones registradas</h3>
+          <h3 className="text-xl font-bold text-gray-700 mb-2">Sin atenciones registradas aún</h3>
           <p className="text-gray-500 mb-6 max-w-md">
-            Registra las visitas al veterinario para llevar un historial médico completo de tu mascota.
+            Lleva un historial médico completo de tu mascota. Registra cada consulta, diagnóstico y próximo control.
           </p>
           <AddVisitButton />
         </div>

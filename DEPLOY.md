@@ -1,44 +1,167 @@
-# PetCare QR - Guía de Despliegue en Vercel
+# DEPLOY.md — PetCare QR
 
-## 1. Configuración de Supabase
+## Guía de despliegue a producción
 
-1. Crear un proyecto nuevo en [Supabase](https://supabase.com).
-2. Ir a **SQL Editor** y ejecutar el contenido de `supabase/schema.sql`.
-   * Esto creará todas las tablas (`dog_profiles`, `treatments`, `dose_history`, `vaccines`, `recipes`, `food_control`).
-   * Activará **Row Level Security (RLS)** y sus políticas protectoras.
-   * Configurará la tabla `storage.buckets` con dos buckets:
-     * `petcare-public` (Público): Para las fotos de perfil de las mascotas.
-     * `petcare-private` (Privado): Para las recetas médicas y documentos sensibles (solo accesibles por el dueño usando URLs firmadas temporales).
-3. Obtener las credenciales del proyecto:
-   * **Project URL**: `https://<PROJECT_ID>.supabase.co`
-   * **Anon/Public Key**: `eyJhbG...`
-   * (NUNCA exponer la `service_role key` en el cliente ni en Vercel si no es estrictamente necesario en el backend, la app actual solo usa la `anon key`).
+---
 
-## 2. Preparación Local
+## 1. Prerequisitos
 
-Asegúrate de que el archivo `.env.local` luzca así y funcione localmente antes de desplegar:
+- Cuenta en [Supabase](https://supabase.com) con proyecto creado
+- Cuenta en [Vercel](https://vercel.com) con repositorio conectado
+- Node.js 18+ / npm
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://TU_PROYECTO.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=TU_LLAVE_ANONIMA
+---
+
+## 2. Variables de entorno
+
+Copia `.env.local.example` como `.env.local` y completa los valores:
+
+```bash
+cp .env.local.example .env.local
 ```
 
-> **IMPORTANTE:** No debes subir `.env.local` al repositorio git.
+| Variable | Descripción | Dónde obtenerla |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | URL del proyecto Supabase | Supabase → Project Settings → API |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clave anónima pública (ANON key) | Supabase → Project Settings → API |
+| `NEXT_PUBLIC_APP_URL` | URL base de la app | Tu dominio de Vercel o `http://localhost:3000` |
 
-## 3. Despliegue en Vercel
+> **NUNCA** uses la `service_role` key en el frontend. Solo usa la `anon` key.
 
-1. Entra a [Vercel](https://vercel.com) e inicia sesión.
-2. Haz click en **Add New... > Project**.
-3. Selecciona tu repositorio de GitHub `petcare-qr`.
-4. En **Environment Variables**, añade:
-   * `NEXT_PUBLIC_SUPABASE_URL` = (tu URL)
-   * `NEXT_PUBLIC_SUPABASE_ANON_KEY` = (tu KEY)
-5. Haz click en **Deploy**.
-6. Espera a que termine la compilación y prueba tu nueva URL (ej: `petcare-qr.vercel.app`).
+En Vercel: **Project → Settings → Environment Variables**
 
-## 4. Pruebas Post-Despliegue
+---
 
-Sigue el archivo `CHECKLIST_BETA_PUBLICA.md` para probar:
-* Creación de usuario y mascota
-* Subida de fotos (verifica que el Storage funcione correctamente)
-* Generación del link del QR público y escaneo desde un dispositivo móvil.
+## 3. Migraciones SQL — Ejecutar en Supabase SQL Editor
+
+Ejecuta en orden:
+
+### 3.1 `supabase/migrations/phase1_quick_wins.sql`
+- `treatments.is_permanent`
+- `dog_profiles.species`, `is_neutered`, `neuter_date`, `surgeries`, `emergency_notes`
+- `dog_profiles.qr_show_food`
+
+### 3.2 `supabase/migrations/phase2_veterinary_feedback.sql`
+- Columnas nuevas de `food_control`
+- Tabla `veterinary_visits` + RLS
+- Tabla `exams` + RLS
+- Tabla `veterinary_centers` + RLS
+
+### 3.3 `supabase/migrations/security_rls_review.sql`
+- Habilitar RLS en todas las tablas
+- Políticas de acceso por usuario
+
+---
+
+## 4. Supabase Storage — Buckets necesarios
+
+Crear en **Supabase → Storage → New Bucket**:
+
+### Bucket: `prescriptions`
+- **Public:** OFF (privado)
+- **Límite:** 10 MB
+- **MIME types:** `image/jpeg, image/png, image/webp, application/pdf`
+
+### Bucket: `exams`
+- **Public:** OFF (privado)
+- **Límite:** 10 MB
+- **MIME types:** `image/jpeg, image/png, image/webp, application/pdf`
+
+#### Storage Policies (agregar en Supabase → Storage → Policies):
+
+```sql
+-- Para cada bucket (reemplaza BUCKET_NAME por 'prescriptions' o 'exams'):
+
+CREATE POLICY "Owner upload" ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'BUCKET_NAME' AND
+    auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+CREATE POLICY "Owner read" ON storage.objects FOR SELECT
+  USING (
+    bucket_id = 'BUCKET_NAME' AND
+    auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+CREATE POLICY "Owner delete" ON storage.objects FOR DELETE
+  USING (
+    bucket_id = 'BUCKET_NAME' AND
+    auth.uid()::text = (storage.foldername(name))[1]
+  );
+```
+
+---
+
+## 5. Configuración de Supabase Auth
+
+### 5.1 Recovery URL (recuperación de contraseña) — OBLIGATORIO
+
+En **Supabase → Authentication → URL Configuration**:
+
+```
+Site URL:      https://tu-app.vercel.app
+Redirect URLs: https://tu-app.vercel.app/auth/callback
+               https://tu-app.vercel.app/nueva-contrasena
+```
+
+> Sin esto, los enlaces de recuperación de contraseña no funcionarán.
+
+### 5.2 Configuración mínima
+
+| Opción | Valor |
+|---|---|
+| Enable email signup | ON |
+| Minimum password length | 8 |
+| JWT expiry | 3600 (1 hora) |
+
+---
+
+## 6. Deploy en Vercel
+
+```bash
+npm install
+npm run build      # Verificar sin errores
+npx vercel --prod  # Deploy
+```
+
+Una vez conectado el repositorio, cada push a `main` dispara deploy automático.
+
+---
+
+## 7. Verificación post-deploy
+
+- [ ] Login / Register funcionan
+- [ ] Recuperar contraseña envía correo (requiere configurar Site URL)
+- [ ] El enlace del email redirige a `/nueva-contrasena`
+- [ ] El QR público funciona (`/qr/[token]`)
+- [ ] Subir imagen/PDF en Recetas funciona
+- [ ] Subir imagen/PDF en Exámenes funciona
+- [ ] Los datos de un usuario NO son visibles para otro
+
+---
+
+## 8. Comandos útiles
+
+```bash
+npm run lint     # Verificar código
+npm run build    # Build de producción
+npm run dev      # Desarrollo local
+```
+
+---
+
+## 9. Estructura de archivos
+
+```
+petcare-qr/
+├── .env.local              # Privado — NO subir a Git
+├── .env.local.example      # Plantilla pública
+├── .gitignore              # Incluye .env*
+├── DEPLOY.md               # Esta guía
+├── CHECKLIST_PUBLIC_BETA.md
+└── supabase/migrations/
+    ├── phase1_quick_wins.sql
+    ├── phase2_veterinary_feedback.sql
+    └── security_rls_review.sql
+```

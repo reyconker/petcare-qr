@@ -30,25 +30,30 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Public routes — always accessible
-  const publicRoutes = ['/qr', '/register', '/privacidad', '/terminos'];
+  // Public routes — always accessible (no login required)
+  const publicRoutes = [
+    '/qr',
+    '/register',
+    '/login',
+    '/recuperar',
+    '/nueva-contrasena',
+    '/auth/callback',
+    '/privacidad',
+    '/terminos',
+    '/onboarding',
+  ];
   if (publicRoutes.some(route => pathname.startsWith(route))) {
     return supabaseResponse;
   }
 
   // Redirect to login if not authenticated on private routes
-  if (!user && !pathname.startsWith('/login')) {
+  if (!user) {
     return NextResponse.redirect(new URL('/login', request.url));
-  }
-
-  // Redirect to dashboard if already authenticated and on login
-  if (user && pathname === '/login') {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   // Redirect root
   if (pathname === '/') {
-    return NextResponse.redirect(new URL(user ? '/dashboard' : '/login', request.url));
+    return NextResponse.redirect(new URL(user ? '/hoy' : '/login', request.url));
   }
 
   // Redirect authenticated users without a dog profile to onboarding

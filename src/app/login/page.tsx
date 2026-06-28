@@ -44,9 +44,14 @@ export default async function LoginPage({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="password">
-              Contraseña
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-gray-700" htmlFor="password">
+                Contraseña
+              </label>
+              <Link href="/recuperar" className="text-xs text-teal-600 hover:underline">
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
             <input
               type="password"
               id="password"
@@ -54,6 +59,7 @@ export default async function LoginPage({
               placeholder="••••••••"
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all"
               required
+              autoComplete="current-password"
             />
           </div>
 
